@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kemahiran Pemulihan: Bentuk & Jenis (5 Aktiviti)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Inter", Segoe UI, Roboto }
+    .activity-card { min-height: 420px }
+    .touch { min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center }
+    .hover-pop { transition: transform .15s ease }
+    .hover-pop:hover { transform: scale(1.05) }
+    .drop-zone { border:2px dashed #cbd5e1; border-radius: .75rem; transition: background .15s ease, border-color .15s ease }
+    .drop-zone.active { background:#ecfeff; border-color:#06b6d4 }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto p-4 max-w-6xl">
+    <!-- HEADER -->
+    <header class="text-center mb-6">
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-800">🎯 Kemahiran Pemulihan</h1>
+      <p class="text-lg text-gray-600 mt-1">Bentuk & Jenis — 5 Aktiviti Pembelajaran (tanpa kuiz)</p>
+    </header>
+
+    <!-- INFO BAR -->
+    <section class="rounded-xl shadow-md p-4 mb-6"
+             style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">💡</span>
+          <span id="infoText" class="text-lg font-medium text-gray-800">
+            Pilih aktiviti, kemudian tekan 🔊 untuk mendengar arahan/penjelasan.
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="repeatBtn" class="touch px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-lg font-medium">🔁 Ulang</button>
+          <button id="speakBtn"  class="touch px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold">🔊 Baca</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN CARD -->
+    <section class="activity-card bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div id="activityContent" class="text-center text-gray-700">
+        <div class="text-6xl mb-3">🎨</div>
+        <h2 class="text-2xl font-bold mb-2">Pilih aktiviti untuk mula belajar!</h2>
+        <p>Semua aktiviti berbentuk penerokaan — tiada markah/soalan. Klik, seret, warnakan & dengar penerangan.</p>
+      </div>
+    </section>
+
+    <!-- SELECTOR -->
+    <section class="bg-white rounded-2xl shadow-lg p-6">
+      <h3 class="text-xl font-bold mb-3 text-gray-800">📚 Pilih Aktiviti</h3>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+        <button class="touch rounded-lg px-3 py-2 bg-blue-500    hover:bg-blue-600    text-white" onclick="loadActivity(1)">1️⃣ Kenal Bentuk</button>
+        <button class="touch rounded-lg px-3 py-2 bg-sky-500     hover:bg-sky-600     text-white" onclick="loadActivity(2)">2️⃣ Padankan Bentuk</button>
+        <button class="touch rounded-lg px-3 py-2 bg-purple-500  hover:bg-purple-600  text-white" onclick="loadActivity(3)">3️⃣ Warna Bentuk Sama</button>
+        <button class="touch rounded-lg px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white" onclick="loadActivity(4)">4️⃣ Kenal Jenis</button>
+        <button class="touch rounded-lg px-3 py-2 bg-orange-500  hover:bg-orange-600  text-white" onclick="loadActivity(5)">5️⃣ Kumpul Jenis</button>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="touch rounded-lg px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white"   onclick="clearActivity()">🧹 Bersih</button>
+        <button class="touch rounded-lg px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="nextActivity()">➡️ Seterusnya</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ====================== SCRIPT ====================== -->
+  <script>
+  /* ========= TTS (baca hanya bila tekan 🔊) ========= */
+  let voices = [], voicesReady=false, isUnlocked=false;
+
+  function unlockTTSOnce(){
+    if(!('speechSynthesis' in window) || isUnlocked) return;
+    try{
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0; u.onend = ()=>{ isUnlocked = true; };
+      speechSynthesis.speak(u);
+    }catch{}
+  }
+  window.addEventListener('pointerdown', unlockTTSOnce, {once:true});
+
+  function loadVoices(){ if(!('speechSynthesis' in window)) return;
+    voices = speechSynthesis.getVoices(); if(voices.length) voicesReady=true;
+  }
+  if('speechSynthesis' in window){
+    loadVoices(); speechSynthesis.addEventListener('voiceschanged', loadVoices);
+  }
+  function bestVoice(){
+    if(!voicesReady) loadVoices();
+    const by = s => voices.find(v=>v.lang?.toLowerCase().includes(s));
+    return by('ms') || by('my') || by('en') || voices[0] || null;
+  }
+  function speak(text){
+    if(!text || !('speechSynthesis' in window)) return;
+    if(!isUnlocked) unlockTTSOnce();
+    try{ speechSynthesis.cancel(); speechSynthesis.resume(); }catch{}
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = .9; u.pitch = 1; u.volume = 1;
+    const v = bestVoice(); if(v) u.voice = v;
+    u.onstart = ()=>{ try{ speechSynthesis.resume(); }catch{} };
+    speechSynthesis.speak(u);
+  }
+
+  const infoTextEl = document.getElementById('infoText');
+  const speakBtn   = document.getElementById('speakBtn');
+  const repeatBtn  = document.getElementById('repeatBtn');
+  let lastSpoken = infoTextEl.textContent;
+
+  function setInfo(text){ infoTextEl.textContent = text; lastSpoken = text; }
+  speakBtn.addEventListener('click', ()=> speak(lastSpoken));
+  repeatBtn.addEventListener('click', ()=> speak(lastSpoken));
+
+  /* ========= State ========= */
+  let currentActivity = 0;
+
+  function clearActivity(){
+    currentActivity = 0;
+    document.getElementById('activityContent').innerHTML = `
+      <div class="text-center text-gray-700">
+        <div class="text-6xl mb-3">🎨</div>
+        <h2 class="text-2xl font-bold mb-2">Pilih aktiviti untuk mula belajar!</h2>
+        <p>Gunakan butang di bawah untuk memilih aktiviti.</p>
+      </div>`;
+    setInfo('Aktiviti dibersihkan. Pilih aktiviti dan tekan butang Baca untuk mendengar arahan.');
+  }
+  function nextActivity(){ loadActivity(Math.min(5, (currentActivity||0)+1)); }
+
+  /* ========= UTIL: Drag & Drop helpers ========= */
+  function makeDraggable(el, data){
+    if(!el) return;
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', JSON.stringify(data));
+      e.dataTransfer.effectAllowed = 'move';
+    });
+  }
+  function makeDropZone(zone, onDrop){
+    if(!zone) return;
+    ['dragenter','dragover'].forEach(evt=>{
+      zone.addEventListener(evt, e=>{ e.preventDefault(); zone.classList.add('active'); });
+    });
+    ['dragleave','drop'].forEach(evt=>{
+      zone.addEventListener(evt, e=>{ zone.classList.remove('active'); });
+    });
+    zone.addEventListener('drop', e=>{
+      e.preventDefault();
+      let raw = e.dataTransfer.getData('text/plain');
+      let data = {};
+      try { data = JSON.parse(raw); } catch {}
+      onDrop?.(e, data);
+    });
+  }
+
+  /* ========= Activities (5 sahaja) ========= */
+
+  // 1) Kenal Bentuk — klik untuk lihat/sebut nama
+  function view1(){
+    const shapes = [
+      { n:'bulatan', e:'🔵' }, { n:'segi empat', e:'🟦' }, { n:'segitiga', e:'🔺' },
+      { n:'bintang', e:'⭐' }, { n:'hati', e:'❤️' }, { n:'berlian', e:'💎' }
+    ];
+    setInfo('Kenal Bentuk: Klik bentuk untuk paparkan namanya. Tekan 🔊 untuk mendengar.');
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-2 md:grid-cols-3 gap-4';
+    shapes.forEach(s=>{
+      const btn = document.createElement('button');
+      btn.className = 'hover-pop bg-gray-50 rounded-xl p-6 text-center';
+      btn.innerHTML = `<div class="text-6xl mb-2">${s.e}</div><div class="font-medium">${s.n}</div>`;
+      btn.addEventListener('click', ()=> setInfo(`Ini bentuk ${s.n}.`));
+      grid.appendChild(btn);
+    });
+    return sectionWrap('🔵 Kenal Bentuk', 'Klik bentuk untuk belajar namanya.', grid);
+  }
+
+  // 2) Padankan Bentuk — drag shape → objek konkrit
+  function view2(){
+    const pairs = [
+      { shape:'🔵', shapeName:'bulatan', obj:'🏀', objName:'bola' },
+      { shape:'🟦', shapeName:'segi empat', obj:'📦', objName:'kotak' },
+      { shape:'🔺', shapeName:'segitiga', obj:'🏔️', objName:'gunung' },
+      { shape:'⭐', shapeName:'bintang', obj:'🌟', objName:'bintang' },
+    ];
+    setInfo('Padankan Bentuk: Seret bentuk ke objek yang sepadan. Ini sesi belajar—tiada markah.');
+    const wrap = document.createElement('div');
+    wrap.className = 'grid grid-cols-2 gap-6';
+
+    const colL = document.createElement('div');
+    colL.innerHTML = `<h3 class="font-semibold text-center mb-2">Bentuk</h3>`;
+    const gridL = document.createElement('div'); gridL.className = 'grid grid-cols-2 gap-3';
+    pairs.forEach((p,i)=>{
+      const card = document.createElement('div');
+      card.id = `shape-${i}`;
+      card.className = 'hover-pop bg-blue-50 rounded-xl p-4 text-center';
+      card.innerHTML = `<div class="text-5xl mb-1">${p.shape}</div><div class="text-sm">${p.shapeName}</div>`;
+      makeDraggable(card, {key:i, tag:p.shapeName});
+      gridL.appendChild(card);
+    });
+    colL.appendChild(gridL);
+
+    const colR = document.createElement('div');
+    colR.innerHTML = `<h3 class="font-semibold text-center mb-2">Objek</h3>`;
+    const gridR = document.createElement('div'); gridR.className = 'grid grid-cols-2 gap-3';
+    pairs.forEach((p,i)=>{
+      const dz = document.createElement('div');
+      dz.id = `drop-${i}`;
+      dz.className = 'drop-zone rounded-xl p-4 text-center min-h-[92px]';
+      dz.innerHTML = `<div class="text-5xl mb-1">${p.obj}</div><div class="text-xs text-gray-600">${p.objName}</div>`;
+      makeDropZone(dz, (e,data)=>{
+        const ok = data.key===i;
+        if(ok){
+          setInfo(`Bagus! ${p.objName} mempunyai bentuk ${p.shapeName}.`);
+          dz.classList.add('bg-green-50');
+        } else {
+          setInfo(`Cuba lagi. Cari objek yang sama bentuk.`);
+          dz.classList.add('bg-rose-50'); setTimeout(()=>dz.classList.remove('bg-rose-50'),400);
+        }
+      });
+      gridR.appendChild(dz);
+    });
+    colR.appendChild(gridR);
+
+    wrap.append(colL,colR);
+    return sectionWrap('🔗 Padankan Bentuk', 'Seret bentuk ke kawasan objek yang sama bentuk.', wrap);
+  }
+
+  // 3) Warna Bentuk Sama — pilih warna → klik bentuk
+  function view3(){
+    const items = [
+      { id:'c1', base:'⚪', label:'bulatan' },
+      { id:'c2', base:'⚪', label:'bulatan' },
+      { id:'c3', base:'⚪', label:'bulatan' },
+    ];
+    const palette = [
+      { name:'merah',  emoji:'🟥'}, { name:'biru',   emoji:'🟦'},
+      { name:'hijau',  emoji:'🟩'}, { name:'kuning', emoji:'🟨'}
+    ];
+    setInfo('Warna Bentuk: Pilih warna pada palet, kemudian klik semua bentuk yang sama.');
+    const wrap = document.createElement('div'); wrap.className = 'grid md:grid-cols-2 gap-6';
+
+    const gridShapes = document.createElement('div'); gridShapes.className = 'grid grid-cols-3 gap-3 place-items-center';
+    let currentColor = null;
+
+    items.forEach(it=>{
+      const b = document.createElement('button');
+      b.id = it.id; b.className = 'hover-pop bg-gray-50 rounded-xl p-6 text-center text-6xl';
+      b.textContent = it.base;
+      b.addEventListener('click', ()=>{
+        if(!currentColor){ setInfo('Pilih warna pada palet terlebih dahulu.'); return; }
+        b.textContent = currentColor.emoji;
+        setInfo(`Bagus. ${it.label} berwarna ${currentColor.name}.`);
+      });
+      gridShapes.appendChild(b);
+    });
+
+    const palWrap = document.createElement('div');
+    palWrap.innerHTML = `<h3 class="font-semibold mb-2">Palet Warna</h3>`;
+    const palGrid = document.createElement('div'); palGrid.className = 'grid grid-cols-2 md:grid-cols-2 gap-2';
+    palette.forEach(p=>{
+      const btn = document.createElement('button');
+      btn.className = 'touch bg-white border rounded-xl p-4 hover:bg-gray-50 flex flex-col items-center';
+      btn.innerHTML = `<span class="text-4xl">${p.emoji}</span><span class="text-sm mt-1">${p.name}</span>`;
+      btn.addEventListener('click',()=>{ currentColor = p; setInfo(`Warna dipilih: ${p.name}. Klik bentuk untuk mewarnakan.`); });
+      palGrid.appendChild(btn);
+    });
+    palWrap.appendChild(palGrid);
+
+    wrap.append(gridShapes, palWrap);
+    return sectionWrap('🎨 Warna Bentuk Sama', 'Pilih warna → klik bentuk (mod belajar).', wrap);
+  }
+
+  // 4) Kenal Jenis — klik & auto letak ke bar kategori
+  function view4(){
+    const cats = ['Haiwan','Buah','Kenderaan'];
+    const data = [
+      {e:'🐱', n:'kucing', cat:'Haiwan'},
+      {e:'🍎', n:'epal',   cat:'Buah'},
+      {e:'🚗', n:'kereta', cat:'Kenderaan'},
+      {e:'🐶', n:'anjing', cat:'Haiwan'},
+      {e:'🍌', n:'pisang', cat:'Buah'},
+      {e:'🚌', n:'bas',    cat:'Kenderaan'},
+    ];
+    setInfo('Kenal Jenis: Klik objek untuk dengar nama & jenis. Objek akan masuk ke bar kategori.');
+    const wrap = document.createElement('div'); wrap.className = 'grid md:grid-cols-2 gap-6';
+
+    const grid = document.createElement('div'); grid.className = 'grid grid-cols-3 gap-3';
+    data.forEach((it,i)=>{
+      const btn = document.createElement('button');
+      btn.id = 'it-'+i;
+      btn.className = 'hover-pop bg-gray-50 rounded-xl p-4 text-center';
+      btn.innerHTML = `<div class="text-5xl">${it.e}</div><div class="text-xs mt-1 text-gray-600">${it.n}</div>`;
+      btn.addEventListener('click', ()=>{
+        const target = document.getElementById('bar-'+it.cat);
+        const chip = document.createElement('div');
+        chip.className = 'px-2 py-1 rounded-lg bg-white shadow text-sm flex items-center gap-1';
+        chip.textContent = it.n;
+        target.appendChild(chip);
+        setInfo(`Ini ${it.n}. Jenis: ${it.cat}.`);
+      });
+      grid.appendChild(btn);
+    });
+
+    const bars = document.createElement('div'); bars.className = 'space-y-3';
+    cats.forEach(c=>{
+      const box = document.createElement('div');
+      box.innerHTML = `<div class="text-sm font-semibold mb-1">${c}</div>
+        <div id="bar-${c}" class="min-h-[60px] rounded-xl p-2 bg-gray-50 flex gap-2 flex-wrap"></div>`;
+      bars.appendChild(box);
+    });
+
+    wrap.append(grid,bars);
+    return sectionWrap('📂 Kenal Jenis', 'Klik untuk melihat nama dan jenis; objek akan masuk ke kategori yang betul.', wrap);
+  }
+
+  // 5) Kumpul Jenis — drag objek → bakul kategori
+  function view5(){
+    const bins = [
+      {id:'bin-haiwan',  name:'Haiwan',    icon:'🐾'},
+      {id:'bin-buah',    name:'Buah',      icon:'🍎'},
+      {id:'bin-kenderaan', name:'Kenderaan', icon:'🚗'},
+    ];
+    const items = [
+      {e:'🐱', n:'kucing', cat:'Haiwan'},
+      {e:'🍎', n:'epal',   cat:'Buah'},
+      {e:'🚗', n:'kereta', cat:'Kenderaan'},
+      {e:'🐶', n:'anjing', cat:'Haiwan'},
+      {e:'🍌', n:'pisang', cat:'Buah'},
+      {e:'🚲', n:'basikal',cat:'Kenderaan'},
+    ];
+    setInfo('Kumpul Jenis: Seret objek ke bakul kategori berlabel. Sistem menerangkan jenisnya.');
+    const wrap = document.createElement('div'); wrap.className = 'grid md:grid-cols-2 gap-6';
+
+    const grid = document.createElement('div'); grid.className = 'grid grid-cols-3 gap-3';
+    items.forEach((it,i)=>{
+      const card = document.createElement('div');
+      card.id = 'obj-'+i; card.className = 'hover-pop bg-gray-50 rounded-xl p-4 text-center';
+      card.innerHTML = `<div class="text-5xl">${it.e}</div><div class="text-xs mt-1 text-gray-600">${it.n}</div>`;
+      makeDraggable(card, {cat:it.cat, n:it.n, e:it.e});
+      grid.appendChild(card);
+    });
+
+    const right = document.createElement('div'); right.className = 'space-y-3';
+    bins.forEach(b=>{
+      const dz = document.createElement('div');
+      dz.id = b.id; dz.dataset.cat = b.name;
+      dz.className = 'drop-zone rounded-xl p-3';
+      dz.innerHTML = `<div class="flex items-center gap-2 mb-2"><span>${b.icon}</span>
+        <span class="font-semibold">${b.name}</span></div><div class="items flex gap-2 flex-wrap"></div>`;
+      makeDropZone(dz, (e,data)=>{
+        const correct = data.cat === e.currentTarget.dataset.cat;
+        const pill = document.createElement('div');
+        pill.className = "px-2 py-1 rounded-lg bg-white shadow text-sm flex items-center gap-1";
+        pill.textContent = data.n;
+        e.currentTarget.querySelector('.items').appendChild(pill);
+        setInfo(correct ? `Hebat! ${data.n} ialah ${e.currentTarget.dataset.cat.toLowerCase()}.`
+                        : `Kita belajar: ${data.n} tergolong dalam ${data.cat}.`);
+      });
+      right.appendChild(dz);
+    });
+
+    wrap.append(grid,right);
+    return sectionWrap('🗂️ Kumpul Jenis', 'Seret ke bakul yang sesuai. Tiada markah – hanya bimbingan.', wrap);
+  }
+
+  /* ===== helper untuk buat section dengan tajuk + subteks ===== */
+  function sectionWrap(title, subtitle, node){
+    const frag = document.createElement('div');
+    frag.innerHTML = `<h2 class="text-2xl font-bold text-center mb-1">${title}</h2>
+                      <p class="text-center text-gray-600 mb-6">${subtitle}</p>`;
+    frag.appendChild(node);
+    return frag;
+  }
+
+  /* ========= Loader ========= */
+  function loadActivity(n){
+    currentActivity = n;
+    const el = document.getElementById('activityContent');
+    // kosongkan dulu (elak baki event lama)
+    el.innerHTML = '';
+    const views = { 1:view1, 2:view2, 3:view3, 4:view4, 5:view5 };
+    const fn = views[n];
+    if(!fn){ el.textContent = 'Aktiviti tidak dijumpai.'; return; }
+    const built = fn();            // fn pulangkan node + side-effect pasang event
+    el.appendChild(built);         // masukkan ke DOM
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', ()=>{
+    loadVoices?.();
+    setInfo('Pilih aktiviti. Tekan 🔊 untuk mendengar arahan di bar maklumat.');
+  });
+  </script>
+</body>
+</html>
